@@ -24,21 +24,16 @@ ADDR = (HOST, PORT)
 bufSize = 4080
 
 
-def rgb2png(training, rawData):
-    name = None
-
-    imgSize = (480, 272)
-
-    img = Image.frombytes('RGB', imgSize, rawData, 'raw', 'RGB;16')
+def recognize(rawData):
+    img = Image.frombytes('RGB', (480, 272), rawData, 'raw', 'RGB;16')
     npimg = np.rot90(np.array(img), -1)
 
     image_char = npimg.astype(np.uint8).tostring()
     rets = facerecg.recognize(npimg.shape[0], npimg.shape[1], image_char)
-    print rets, npimg.shape[0], npimg.shape[1]
+
     if rets is None or len(rets) == 0:
         rect = [0,0,0,0]
-    elif training:
-        rect = rets[0]['rect']
+        name = None
     else:
         rect = rets[0]['rect']
         name = rets[0]['name']
@@ -49,9 +44,27 @@ def rgb2png(training, rawData):
 
     return buff
 
-def modulesUpdate(client, data, msg):
-    print("Get module update msg")
-    facerecg.moduleUpdate("")
+def addperson(name, rawData):
+    img = Image.frombytes('RGB', (480, 272), rawData, 'raw', 'RGB;16')
+    npimg = np.rot90(np.array(img), -1)
+
+    image_char = npimg.astype(np.uint8).tostring()
+    ret = facerecg.add_person(name, npimg.shape[0], npimg.shape[1], image_char)
+
+    return ret
+
+newname = None
+def mqttmsg(client, data, msg):
+    global newname
+    if msg.topic == "NXP_CMD_MODULE_UPDATE":
+        pass
+    elif msg.topic == "NXP_CMD_ADD_PERSON":
+        print "NXP_CMD_ADD_PERSON", msg.payload
+        newname = msg.payload
+    elif msg.topic == "NXP_CMD_DEL_PERSON":
+        print "NXP_CMD_DEL_PERSON", msg.payload
+        ret = facerecg.del_person(msg.payload)
+
 
 args = parser.parse_args()
 
@@ -59,16 +72,17 @@ args = parser.parse_args()
 img_size = 261120
 class MyRequestHandler(SocketServer.BaseRequestHandler):
     def handle(self):
-        if args.svr:
-            broadmqtt = mqtt.Client()
-            broadmqtt.connect(args.svr, 1883, 60)
-            broadmqtt.subscribe("NXP_CMD_MODULE_UPDATE", qos=1)
-            broadmqtt.on_message = modulesUpdate
-            broadmqtt.loop_start()
+        broadmqtt = mqtt.Client()
+        broadmqtt.connect("localhost", 1883, 60)
+        broadmqtt.subscribe("NXP_CMD_MODULE_UPDATE", qos=1)
+        broadmqtt.subscribe("NXP_CMD_ADD_PERSON", qos=1)
+        broadmqtt.subscribe("NXP_CMD_DEL_PERSON", qos=1)
+        broadmqtt.on_message = mqttmsg
+        broadmqtt.loop_start()
+
         print '...connected from:', self.client_address
         conn = self.request
-        training = False
-        name = None
+        global newname
 
         databuffer = None
         receving = False
@@ -78,20 +92,20 @@ class MyRequestHandler(SocketServer.BaseRequestHandler):
                 if buf[0] == '\x01' and buf[1] == '\x02' and buf[2] == '\x03' and buf[3] == '\x04' and buf[4] == '\x05':
                     databuffer = bytes()
                     receving = True
+                elif buf[0] == '\x06' and buf[1] == '\x07' and buf[2] == '\x08' and buf[3] == '\x09' and buf[4] == '\x0a':
+                    pass
                 else:
                     pass
 
-                if training:
-                    ret = facerecg.getTrainStatus()
-                    if ret[0] == 0:
-                        training = False
-                        buff = struct.pack("cccc", 'c','c','c','c')
-                        conn.sendall(buff)
             elif receving:
                 databuffer += buf
                 if len(databuffer) >= img_size:
-                    buff = rgb2png(training, databuffer)
-                    conn.sendall(buff)
+                    if newname:
+                        ret = addperson(newname, databuffer)
+                        newname = None
+                    else:
+                        buff = recognize(databuffer)
+                        conn.sendall(buff)
                     receving = False
 
 def tcpServerProcess():
