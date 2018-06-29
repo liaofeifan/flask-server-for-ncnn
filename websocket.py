@@ -6,7 +6,7 @@ from autobahn.twisted.websocket import WebSocketServerFactory, \
 from twisted.internet import task, defer
 
 from twisted.internet.ssl import DefaultOpenSSLContextFactory
-import facerecogniton.facerecogniton as facerecg
+#import facerecogniton
 from multiprocessing import Process
 import time, StringIO, base64, os
 from PIL import Image
@@ -16,14 +16,15 @@ import paho.mqtt.client as mqtt
 
 VIDEO_DEVICE = ""
 WEBSOCKET_PORT = 9000
- 
+
+
 class FaceServerProtocol(WebSocketServerProtocol):
     def __init__(self):
         super(FaceServerProtocol, self).__init__()
         self.new_person = None
 
     def modulesUpdate(self, payload):
-        names = facerecg.moduleUpdate(payload)
+        #names = facerecg.moduleUpdate(payload)
         self.sendSocketMessage("LOADNAME_RESP", ",".join(names))
 
     def onOpen(self):
@@ -33,7 +34,7 @@ class FaceServerProtocol(WebSocketServerProtocol):
         pass
 
     def getTrainStatus(self):
-        ret = facerecg.getTrainStatus()
+        #ret = facerecg.getTrainStatus()
         if ret[0] == 1:
             #recoding
             reactor.callLater(0.5, self.getTrainStatus)
@@ -51,7 +52,8 @@ class FaceServerProtocol(WebSocketServerProtocol):
         if msg['type'] == "CONNECT_REQ":
             self.sendSocketMessage("CONNECT_RESP", msg)
         elif msg['type'] == "LOADNAME_REQ":
-            names = facerecg.getNames()
+            #names = facerecg.getNames()
+            names = ["gf"]
             self.sendSocketMessage("LOADNAME_RESP", ",".join(names))
             if VIDEO_DEVICE == "laptop":
                 self.sendSocketMessage("INITCAMERA")
@@ -106,7 +108,7 @@ tls_key = os.path.join(fdir, 'tls', 'server.key')
 
 
 def startSocketServer(serverip):
-    facerecg.initEngine(serverip)
+    #facerecg.initEngine(serverip)
     factory = FaceModuleFactory()
 
     if serverip != None:

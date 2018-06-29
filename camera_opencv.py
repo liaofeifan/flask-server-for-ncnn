@@ -1,6 +1,6 @@
 import cv2
 from base_camera import BaseCamera
-import facerecogniton.facerecogniton as facerecg
+import facerecognition
 import Queue
 import numpy as np
 import time,os
@@ -16,11 +16,12 @@ def rotate(image, angle, center=None, scale=1.0):
 
     return rotated
 
+facerecg = facerecognition.FaceRecognition("./models")
 
 class Camera(BaseCamera):
     video_source = []
     camera_number = 0
-    buffer_count = 5
+    buffer_count = 1
     reg_ret = []
 
     @staticmethod
@@ -43,14 +44,7 @@ class Camera(BaseCamera):
             if not cameras[i].isOpened():
                 raise RuntimeError('Could not start camera. Index:' , i)
 
-            if(Camera.camera_number == 1):
-                cameras[i].set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 800)
-                cameras[i].set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 450)
-            elif(Camera.camera_number == 2):
-                cameras[i].set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 640)
-                cameras[i].set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
         framequeue = Queue.Queue(maxsize=Camera.buffer_count)
-
 
         for j in range(Camera.buffer_count - 1):
             images = []
@@ -67,7 +61,7 @@ class Camera(BaseCamera):
             # read current frame
             current = time.time() * 1000
 
-            if current - last_time < 30:
+            if current - last_time < 10:
                 time.sleep(0.001)
                 continue
             last_time = current
@@ -78,11 +72,14 @@ class Camera(BaseCamera):
                 #images.append(after)
                 images.append(img)
 
-            facerecg.proCvFrame(images)
             framequeue.put(images)
             images = framequeue.get()
+            image_char = images[0].astype(np.uint8).tostring()
+            rets = facerecg.recognize(images[0].shape[0], images[0].shape[1], image_char)
+            yield cv2.imencode('.png', images[0])[1].tobytes()
 
-            rets = facerecg.getResult()
+
+    def nouse():
             if rets is None:
                 rets = last_rets
             else:
@@ -137,4 +134,3 @@ class Camera(BaseCamera):
                 final1 = np.concatenate((images[0], images[1]), axis=1)
                 final2 = np.concatenate((images[2], images[3]), axis=1)
                 final = np.concatenate((final1, final2), axis=0)
-            yield cv2.imencode('.png', final)[1].tobytes()
