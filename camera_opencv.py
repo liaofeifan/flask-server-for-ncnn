@@ -61,9 +61,9 @@ class Camera(BaseCamera):
             # read current frame
             current = time.time() * 1000
 
-            if current - last_time < 10:
-                time.sleep(0.001)
-                continue
+            #if current - last_time < 10:
+            #    time.sleep(0.001)
+            #    continue
             last_time = current
 
             for i in range(Camera.camera_number):
@@ -76,17 +76,10 @@ class Camera(BaseCamera):
             images = framequeue.get()
             image_char = images[0].astype(np.uint8).tostring()
             rets = facerecg.recognize(images[0].shape[0], images[0].shape[1], image_char)
-            yield cv2.imencode('.png', images[0])[1].tobytes()
 
-
-    def nouse():
-            if rets is None:
-                rets = last_rets
-            else:
-                last_rets = rets
-
-            for (i, each) in  enumerate(rets):
-                for ret in each:
+            #for (i, each) in  enumerate(rets):
+            for ret  in  rets:
+                #for ret in each:
                     #draw bounding box for the face
                     rect = ret['rect']
                    # cv2.rectangle(images[i],(rect[0],rect[1]),(rect[0] + rect[2],rect[1]+rect[3]),(0,0,255),2)
@@ -134,3 +127,4 @@ class Camera(BaseCamera):
                 final1 = np.concatenate((images[0], images[1]), axis=1)
                 final2 = np.concatenate((images[2], images[3]), axis=1)
                 final = np.concatenate((final1, final2), axis=0)
+            yield cv2.imencode('.png', images[0])[1].tobytes()
