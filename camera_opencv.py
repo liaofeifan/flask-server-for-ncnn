@@ -16,7 +16,37 @@ def rotate(image, angle, center=None, scale=1.0):
 
     return rotated
 
-facerecg = facerecognition.FaceRecognition("./models")
+def draw_name(image, rect, name):
+    # cv2.rectangle(images[i],(rect[0],rect[1]),(rect[0] + rect[2],rect[1]+rect[3]),(0,0,255),2)
+    # cv2.putText(images[i], ret['name'],(rect[0],rect[1]),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2)
+    cv2.rectangle(image,(rect[0],rect[1]),(rect[0] + rect[2],rect[1]+rect[3]),(127,255,0),1)
+			
+    # draw thicking corners
+    int_x=rect[2]/5
+    int_y=rect[3]/5
+    cv2.line(image,(rect[0],rect[1]),(rect[0] + int_x,rect[1]),(127,255,0),3)
+    cv2.line(image,(rect[0],rect[1]),(rect[0],rect[1]+int_y),(127,255,0),3)
+    cv2.line(image,(rect[0],rect[1]+int_y*4),(rect[0],rect[1]+rect[3]),(127,255,0),3)
+    cv2.line(image,(rect[0],rect[1]+rect[3]),(rect[0] + int_x,rect[1]+rect[3]),(127,255,0),3)
+    cv2.line(image,(rect[0]+ int_x*4,rect[1]+rect[3]),(rect[0] + rect[2],rect[1]+rect[3]),(127,255,0),3)
+    cv2.line(image,(rect[0] + rect[2],rect[1]+rect[3]),(rect[0] + rect[2],rect[1]+int_y*4),(127,255,0),3)
+    cv2.line(image,(rect[0] + rect[2],rect[1]+int_y),(rect[0] + rect[2],rect[1]),(127,255,0),3)
+    cv2.line(image,(rect[0] + int_x*4,rect[1]),(rect[0] + rect[2],rect[1]),(127,255,0),3)
+    #draw middle line
+    line_x=rect[2]/8
+    cv2.line(image,(rect[0]-line_x,rect[1]+rect[3]/2),(rect[0] + line_x,rect[1]+rect[3]/2),(127,255,0),1)
+    cv2.line(image,(rect[0]+rect[2]/2,rect[1]+rect[3]-line_x),(rect[0]+rect[2]/2,rect[1]+rect[3]+line_x),(127,255,0),1)
+    cv2.line(image,(rect[0]+line_x*7,rect[1]+rect[3]/2),(rect[0]+line_x*9,rect[1]+rect[3]/2),(127,255,0),1)
+    cv2.line(image,(rect[0]+rect[2]/2,rect[1]-line_x),(rect[0]+rect[2]/2,rect[1]+line_x),(127,255,0),1)
+    #write name text
+    # cv2.putText(images[i], ret['name'],(rect[0],rect[1]),cv2.FONT_HERSHEY_SIMPLEX,1,(100,255,255,255),2)
+    if(name != None and name != " " and name != ""):
+        cv2.putText(image, name,(rect[0]+rect[2],rect[1]),cv2.FONT_HERSHEY_COMPLEX,int_y*1.0/40,(242,243,231),2)
+        cv2.putText(image, 'Employee',(rect[0]+rect[2],rect[1]+rect[3]/5),cv2.FONT_HERSHEY_COMPLEX,int_y*1.0/50,(222,223,215),1)
+        cv2.putText(image, 'Digital Networking',(rect[0]+rect[2],rect[1]+rect[3]/3),cv2.FONT_HERSHEY_COMPLEX,int_y*1.0/60,(214,215,206),1)
+
+
+facerecg = facerecognition.FaceRecognition("./models", 0.63)
 
 class Camera(BaseCamera):
     video_source = []
@@ -53,18 +83,8 @@ class Camera(BaseCamera):
                 images.append(img)
             framequeue.put(images)
 
-        last_time = 0
-        last_rets = []
-
         while True:
             images = []
-            # read current frame
-            current = time.time() * 1000
-
-            #if current - last_time < 10:
-            #    time.sleep(0.001)
-            #    continue
-            last_time = current
 
             for i in range(Camera.camera_number):
                 _, img = cameras[i].read()
@@ -72,50 +92,21 @@ class Camera(BaseCamera):
                 #images.append(after)
                 images.append(img)
 
-            framequeue.put(images)
-            images = framequeue.get()
+            #framequeue.put(images)
+            #images = framequeue.get()
             image_char = images[0].astype(np.uint8).tostring()
             rets = facerecg.recognize(images[0].shape[0], images[0].shape[1], image_char)
 
             #for (i, each) in  enumerate(rets):
             for ret  in  rets:
                 #for ret in each:
-                    #draw bounding box for the face
-                    rect = ret['rect']
-                   # cv2.rectangle(images[i],(rect[0],rect[1]),(rect[0] + rect[2],rect[1]+rect[3]),(0,0,255),2)
-                   # cv2.putText(images[i], ret['name'],(rect[0],rect[1]),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2)
-		    cv2.rectangle(images[i],(rect[0],rect[1]),(rect[0] + rect[2],rect[1]+rect[3]),(127,255,0),1)
-					
-					#
-                    # draw thicking corners
-					
-		    int_x=rect[2]/5
-		    int_y=rect[3]/5
-                    cv2.line(images[i],(rect[0],rect[1]),(rect[0] + int_x,rect[1]),(127,255,0),3)
-                    cv2.line(images[i],(rect[0],rect[1]),(rect[0],rect[1]+int_y),(127,255,0),3)
-                    cv2.line(images[i],(rect[0],rect[1]+int_y*4),(rect[0],rect[1]+rect[3]),(127,255,0),3)
-                    cv2.line(images[i],(rect[0],rect[1]+rect[3]),(rect[0] + int_x,rect[1]+rect[3]),(127,255,0),3)
-                    cv2.line(images[i],(rect[0]+ int_x*4,rect[1]+rect[3]),(rect[0] + rect[2],rect[1]+rect[3]),(127,255,0),3)
-                    cv2.line(images[i],(rect[0] + rect[2],rect[1]+rect[3]),(rect[0] + rect[2],rect[1]+int_y*4),(127,255,0),3)
-                    cv2.line(images[i],(rect[0] + rect[2],rect[1]+int_y),(rect[0] + rect[2],rect[1]),(127,255,0),3)
-                    cv2.line(images[i],(rect[0] + int_x*4,rect[1]),(rect[0] + rect[2],rect[1]),(127,255,0),3)
-		    #draw middle line
-		    line_x=rect[2]/8
-                    cv2.line(images[i],(rect[0]-line_x,rect[1]+rect[3]/2),(rect[0] + line_x,rect[1]+rect[3]/2),(127,255,0),1)
-                    cv2.line(images[i],(rect[0]+rect[2]/2,rect[1]+rect[3]-line_x),(rect[0]+rect[2]/2,rect[1]+rect[3]+line_x),(127,255,0),1)
-                    cv2.line(images[i],(rect[0]+line_x*7,rect[1]+rect[3]/2),(rect[0]+line_x*9,rect[1]+rect[3]/2),(127,255,0),1)
-                    cv2.line(images[i],(rect[0]+rect[2]/2,rect[1]-line_x),(rect[0]+rect[2]/2,rect[1]+line_x),(127,255,0),1)
-            	   #write name text
-		   # cv2.putText(images[i], ret['name'],(rect[0],rect[1]),cv2.FONT_HERSHEY_SIMPLEX,1,(100,255,255,255),2)
-                    if(ret['name']!=None and ret['name']!= " " and ret['name']!= ""):
-                        cv2.putText(images[i], ret['name'],(rect[0]+rect[2],rect[1]),cv2.FONT_HERSHEY_COMPLEX,int_y*1.0/40,(242,243,231),2)
-                        cv2.putText(images[i], 'Employee',(rect[0]+rect[2],rect[1]+rect[3]/5),cv2.FONT_HERSHEY_COMPLEX,int_y*1.0/50,(222,223,215),1)
-                        cv2.putText(images[i], 'Digital Networking',(rect[0]+rect[2],rect[1]+rect[3]/3),cv2.FONT_HERSHEY_COMPLEX,int_y*1.0/60,(214,215,206),1)
-
+                #draw bounding box for the face
+                rect = ret['rect']
+                draw_name(images[0], rect, ret['name'])
 
             if (len(images) == 1):
                 final1 = images[0]
-                final = cv2.copyMakeBorder(final1,22,23,232,232, cv2.BORDER_CONSTANT,value=[255,255,255])
+                final = cv2.copyMakeBorder(final1,0,0,192,192, cv2.BORDER_CONSTANT,value=[255,255,255])
             elif (len(images) == 2):
                 final1 = np.concatenate((images[0], images[1]), axis=1)
                 final = cv2.copyMakeBorder(final1,48,48,0,0, cv2.BORDER_CONSTANT,value=[255,255,255])
@@ -127,4 +118,4 @@ class Camera(BaseCamera):
                 final1 = np.concatenate((images[0], images[1]), axis=1)
                 final2 = np.concatenate((images[2], images[3]), axis=1)
                 final = np.concatenate((final1, final2), axis=0)
-            yield cv2.imencode('.png', images[0])[1].tobytes()
+            yield cv2.imencode('.png', final)[1].tobytes()

@@ -106,7 +106,6 @@ fdir = os.path.dirname(os.path.realpath(__file__))
 tls_crt = os.path.join(fdir, 'tls', 'server.crt')
 tls_key = os.path.join(fdir, 'tls', 'server.key')
 
-
 def startSocketServer(serverip):
     #facerecg.initEngine(serverip)
     factory = FaceModuleFactory()
