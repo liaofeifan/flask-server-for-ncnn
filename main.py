@@ -7,7 +7,7 @@ import websocket
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dev', type=str, required=True,
-                    help='[usb|laptop|"url" of IP camera]input video device')
+                    help='[usb|"url" of IP camera]input video device')
 parser.add_argument('--httpport', type=int,
                     help='The port for http server')
 parser.add_argument('--socketport', type=int,
@@ -18,9 +18,7 @@ args = parser.parse_args()
 
 print("Initialzing face recognition engine.")
 websocket.VIDEO_DEVICE = args.dev
-if args.dev == 'laptop':
-    print("Using the camera of laptop.")
-elif args.dev == 'usb':
+if args.dev == 'usb':
     from camera_opencv import *
     print("Using onboard usb camera")
 

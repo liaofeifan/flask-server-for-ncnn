@@ -96,7 +96,6 @@ class Camera(BaseCamera):
             #images = framequeue.get()
             image_char = images[0].astype(np.uint8).tostring()
             rets = facerecg.recognize(images[0].shape[0], images[0].shape[1], image_char)
-
             #for (i, each) in  enumerate(rets):
             for ret  in  rets:
                 #for ret in each:
