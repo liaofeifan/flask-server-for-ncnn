@@ -39,11 +39,7 @@ def draw_name(image, rect, name):
     cv2.line(image,(rect[0]+line_x*7,rect[1]+rect[3]/2),(rect[0]+line_x*9,rect[1]+rect[3]/2),(127,255,0),1)
     cv2.line(image,(rect[0]+rect[2]/2,rect[1]-line_x),(rect[0]+rect[2]/2,rect[1]+line_x),(127,255,0),1)
     #write name text
-    # cv2.putText(images[i], ret['name'],(rect[0],rect[1]),cv2.FONT_HERSHEY_SIMPLEX,1,(100,255,255,255),2)
-    if(name != None and name != " " and name != ""):
-        cv2.putText(image, name,(rect[0]+rect[2],rect[1]),cv2.FONT_HERSHEY_COMPLEX,int_y*1.0/40,(242,243,231),2)
-        cv2.putText(image, 'Employee',(rect[0]+rect[2],rect[1]+rect[3]/5),cv2.FONT_HERSHEY_COMPLEX,int_y*1.0/50,(222,223,215),1)
-        cv2.putText(image, 'Digital Networking',(rect[0]+rect[2],rect[1]+rect[3]/3),cv2.FONT_HERSHEY_COMPLEX,int_y*1.0/60,(214,215,206),1)
+    cv2.putText(image, name,(rect[0]+rect[2],rect[1]),cv2.FONT_HERSHEY_COMPLEX,int_y*1.0/40,(242,243,231),2)
 
 
 facerecg = facerecognition.FaceRecognition("./models", 0.63)
@@ -51,8 +47,8 @@ facerecg = facerecognition.FaceRecognition("./models", 0.63)
 class Camera(BaseCamera):
     video_source = []
     camera_number = 0
-    buffer_count = 1
     reg_ret = []
+    new_name = None
 
     @staticmethod
     def set_video_source(source):
@@ -62,8 +58,16 @@ class Camera(BaseCamera):
             Camera.camera_number = 2
 
     @staticmethod
-    def set_buffer_count(count):
-        Camera.buffer_count = count
+    def del_person(name):
+        facerecg.del_person(name)
+
+    @staticmethod
+    def add_person(name):
+        Camera.new_name = name
+
+    @staticmethod
+    def get_names():
+        return facerecg.get_names()
 
     @staticmethod
     def frames():
@@ -73,15 +77,6 @@ class Camera(BaseCamera):
             cameras.append(cv2.VideoCapture(Camera.video_source[i]))
             if not cameras[i].isOpened():
                 raise RuntimeError('Could not start camera. Index:' , i)
-
-        framequeue = Queue.Queue(maxsize=Camera.buffer_count)
-
-        for j in range(Camera.buffer_count - 1):
-            images = []
-            for i in range(Camera.camera_number):
-                _, img =  cameras[i].read()
-                images.append(img)
-            framequeue.put(images)
 
         while True:
             images = []
@@ -95,7 +90,14 @@ class Camera(BaseCamera):
             #framequeue.put(images)
             #images = framequeue.get()
             image_char = images[0].astype(np.uint8).tostring()
-            rets = facerecg.recognize(images[0].shape[0], images[0].shape[1], image_char)
+
+            if Camera.new_name != None:
+                rets = facerecg.add_person(Camera.new_name,images[0].shape[0], images[0].shape[1], image_char)
+                if rets == 0:
+                    Camera.new_name = None
+                rets = []
+            else:
+                rets = facerecg.recognize(images[0].shape[0], images[0].shape[1], image_char)
             #for (i, each) in  enumerate(rets):
             for ret  in  rets:
                 #for ret in each:

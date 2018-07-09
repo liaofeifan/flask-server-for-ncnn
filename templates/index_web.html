@@ -29,14 +29,10 @@ limitations under the License.
     </head>
     <body>
         <div class="container">
-            <div class="header" style="visibility:hidden;" id="cameradiv">
-                <video id="videocamera" width="800" height="600" preload="auto"/>
-            </div>
-            <div class="header" style="visibility:hidden;" id="videodiv">
-                <img src="{{ url_for('video_feed') }}" width="800" height="600">
-            </div>
-            <div class="header" style="visibility:hidden;" id="canvasdiv">
-                <canvas id="canvasoutput" width="800" height="600"/>
+            <h3>Face Recognition Based On NXP LS1046A</h3>
+            <div class="header" id="videodiv">
+                <!--img src="{{ url_for('video_feed') }}" width="1664" height="624"-->
+                <img src="{{ url_for('video_feed') }}" width="1664" height="720">
             </div>
             <div class="content2">
                 <h4>All Names:</h4>
@@ -47,21 +43,10 @@ limitations under the License.
                     <input type="text" id="addPersonTxt" style="width:20%;border:1.5px solid #000">
                 </h4>
                 <h4>
-                    <button type="button" id="btn_start">Training</button>
+                    <button type="button" id="btn_start">Add Person</button>
                     <button type="button" id="btn_delete">Delete Person</button>
-                    Status: <span id="trainingStatus"></span>
+                    <button type="button" id="btn_refresh">Refresh Names</button>
                 </h4>
-                <div style="display:none;" id="processdiv">
-                    <h4>Face Left :
-                        <progress value="0" class="mypro" id="processleft"  max="15"/>
-                    </h4>
-                    <h4>Face Right
-                        <progress value="0" class="mypro" id="processright" max="15"/>
-                    </h4>
-                    <h4>Face Front
-                        <progress value="0" class="mypro" id="processfront" max="15"/>
-                    </h4>
-                 </div>
                 <div style="display:none;" id="processimg">
                     <h4>Traing on LS1046ARDB
                          <img src="{{url_for('static', filename='images/loading.gif')}}"/>
@@ -77,24 +62,17 @@ limitations under the License.
     <script src="{{url_for('static',filename='vendor/js/handlebars.min.js')}}"></script>
     <script src="{{url_for('static',filename='vendor/js/jstat.min.js')}}"></script>
     <script src="{{url_for('static',filename='js/facereg-demo.js')}}"></script>
+    <script src="{{url_for('static',filename='vendor/js/socket.io.min.js')}}"></script>
     <script type="text/javascript">
      var people = '', training = false, socket;
-     var bufferCtx = [], bufferConvas = [], currentCtx;
-     var recgRet, vidReady = false;
-     const bufNum = 20;
      console.log("Start");
 
      $('#btn_start').click(btnStartOnclick);
-     //$('#btn_finish').click(btnFinishOnclick);
+     $('#btn_refresh').click(btnRefreshOnclick);
      $('#btn_delete').click(btnDeleteOnclick);
 
-     var video=document.getElementById('videocamera');
-     var canvas=document.getElementById('canvasoutput');  
-     var outputCtx=canvas.getContext('2d');
-     var scale = canvas.width/video.width;
-
-
-     createSocket("wss://" + window.location.hostname + ":9000");
+     createSocket('http://' + document.domain + ':' + location.port + '/testnamespace');
+     //createSocket("wss://" + window.location.hostname + ":WEBSOCKET_PORT");
 
     </script>
 </html>
