@@ -28,16 +28,13 @@ limitations under the License.
         <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
     </head>
     <body>
-        <div class="container">
+        <div class="header">
             <h3>Face Recognition Based On NXP LS1046A</h3>
-            <div class="header" id="videodiv">
-                <!--img src="{{ url_for('video_feed') }}" width="1664" height="624"-->
-                <img src="{{ url_for('video_feed') }}" width="1664" height="720">
-            </div>
-            <div class="content2">
+
+            <!--div class="content2">
                 <h4>All Names:</h4>
                 <textarea style="resize:none" readonly id="identity" cols ="50" rows = "4"></textarea>
-            </div>
+            </div-->
             <div class="content1">
                 <h4>Input Your Name:
                     <input type="text" id="addPersonTxt" style="width:20%;border:1.5px solid #000">
@@ -45,13 +42,13 @@ limitations under the License.
                 <h4>
                     <button type="button" id="btn_start">Add Person</button>
                     <button type="button" id="btn_delete">Delete Person</button>
-                    <button type="button" id="btn_refresh">Refresh Names</button>
-                </h4>
+                    <!--button type="button" id="btn_refresh">Refresh Names</button>
                 <div style="display:none;" id="processimg">
                     <h4>Traing on LS1046ARDB
                          <img src="{{url_for('static', filename='images/loading.gif')}}"/>
                     </h4>
-                </div>
+                </div-->
+                </h4>
             </div>
         </div>
     </body>
