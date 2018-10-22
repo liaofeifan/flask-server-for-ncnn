@@ -44,13 +44,24 @@ def recognize(rawData):
 
     return buff
 
+def getguestname():
+    names = facerecg.get_names()
+
+    i = 1;
+    while(True):
+        name = "Guest_" + str(i)
+        if name not in names:
+            return name
+        else:
+            i += 1
+
 def addperson(name, rawData):
     img = Image.frombytes('RGB', (480, 272), rawData, 'raw', 'RGB;16')
     npimg = np.rot90(np.array(img), -1)
 
     image_char = npimg.astype(np.uint8).tostring()
-    ret = facerecg.add_person(name, npimg.shape[0], npimg.shape[1], image_char)
 
+    ret = facerecg.add_person(name, npimg.shape[0], npimg.shape[1], image_char)
     return ret
 
 newname = None
@@ -93,7 +104,12 @@ class MyRequestHandler(SocketServer.BaseRequestHandler):
                     databuffer = bytes()
                     receving = True
                 elif buf[0] == '\x06' and buf[1] == '\x07' and buf[2] == '\x08' and buf[3] == '\x09' and buf[4] == '\x0a':
-                    pass
+                    global newname
+                    if newname == None:
+                        newname = getguestname()
+                        buff = struct.pack("cccc", 'e','e','e','e')
+                        conn.sendall(buff)
+
                 else:
                     pass
 
@@ -102,10 +118,13 @@ class MyRequestHandler(SocketServer.BaseRequestHandler):
                 if len(databuffer) >= img_size:
                     if newname:
                         ret = addperson(newname, databuffer)
+                        if "Guest" in newname:
+                            sndbuff = struct.pack("cccc", 'c','c','c','c')
+                            conn.sendall(sndbuff)
                         newname = None
                     else:
-                        buff = recognize(databuffer)
-                        conn.sendall(buff)
+                        sndbuff = recognize(databuffer)
+                        conn.sendall(sndbuff)
                     receving = False
 
 def tcpServerProcess():
