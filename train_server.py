@@ -10,9 +10,8 @@ import paho.mqtt.client as mqtt
 import numpy as np
 from PIL import Image
 
+import facerecognition
 
-
-import facerecogniton.facemodules_server as facemodules
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -28,6 +27,8 @@ mqttclient = mqtt.Client()
 mqttclient.connect('localhost', 1883, 60)
 mqttclient.loop_start()
 
+facerecg = facerecognition.FaceRecognition("./models", 0.63)
+
 modulespath = os.path.join(app.root_path,'models')
 class TrainModels(Resource):
     def __send_train_finish(self, name):
@@ -39,12 +40,12 @@ class TrainModels(Resource):
         mqttclient.publish("NXP_CMD_MODULE_UPDATE", name)
 
     def get(self):
-        return send_from_directory(modulespath, 'facerec_128D.txt', as_attachment=True)
+        return send_from_directory(modulespath, 'feature.db', as_attachment=True)
 
     def delete(self):
         args = parser.parse_args()
         name = args['id'].decode('utf-8')
-        ret = facemodules.delete_module(name)
+        ret = facerecg.delete_module(name)
         if ret == True:
             self.__send_delete_name(name)
             return {'state':'SUCCESS'}, 200
@@ -106,10 +107,6 @@ class TrainModelsWX(Resource):
     def put(self):
         name = request.form['id'].decode('utf-8')
         print name,request.form
-        ret = facemodules.training_start(name)
-        if ret == False:
-            print "already in"
-            return {'state':'EXIST'}, 201
         return {'state':'SUCCESS'}, 201
 
     def post(self):
@@ -122,12 +119,14 @@ class TrainModelsWX(Resource):
        pili = Image.open(pif)
        frame = np.array(pili)
 
-       ret = facemodules.training_proframe_detect(name, frame)
-       img_num = facemodules.get_images_num(name)
-       if(ret and img_num['l'] == 10 and img_num['r'] == 10 and img_num['c'] == 10):
-           facemodules.training_finish(name, self.__send_train_finish)
+       image_char = frame.astype(np.uint8).tostring()
 
-       return img_num, 201
+       ret = facerecg.add_person(frame.shape[0], frame.shape[1], image_char)
+       if ret == 0:
+           return {'state':'SUCCESS'}, 201
+       else:
+           return {'state':'FAILED'}, 201
+
 
 ##
 ## Actually setup the Api resource routing here
